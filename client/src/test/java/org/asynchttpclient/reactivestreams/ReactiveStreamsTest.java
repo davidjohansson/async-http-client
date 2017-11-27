@@ -522,6 +522,7 @@ public class ReactiveStreamsTest {
 	static class ByteBufIterable implements Iterable<ByteBuf> {
 		private final byte[] payload;
 		private final int chunkSize;
+		private final MessageDigest md = newMd5();
 
 		public ByteBufIterable(byte[] payload, int chunkSize) {
 			this.payload = payload;
@@ -543,6 +544,17 @@ public class ReactiveStreamsTest {
 					int thisCurrentIndex = currentIndex;
 					int length = Math.min(chunkSize, payload.length - thisCurrentIndex);
 					currentIndex += length;
+					
+					md.update(payload, thisCurrentIndex, length);
+					
+					if (!hasNext()) {
+						String md5 = Base64.encode(md.digest());
+						if (!md5.equals(LARGE_IMAGE_BYTES_MD5)) {
+							new Exception("ByteBufIterable generated a request payload with invalid MD5 of " + md5).printStackTrace();
+						}
+						md.reset();
+					}
+					
 					return Unpooled.wrappedBuffer(payload, thisCurrentIndex, length);
 				}
 
@@ -553,16 +565,16 @@ public class ReactiveStreamsTest {
 			};
 		}
 	}
+	
+	private static MessageDigest newMd5() {
+		try {
+			return MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new InternalError(e);
+		}
+	}
 
 	private static class RequestChunksChecker extends ChannelOutboundHandlerAdapter {
-
-		private static MessageDigest newMd5() {
-			try {
-				return MessageDigest.getInstance("MD5");
-			} catch (NoSuchAlgorithmException e) {
-				throw new InternalError(e);
-			}
-		}
 
 		private final MessageDigest md = newMd5();
 

@@ -96,6 +96,14 @@ public class NettyReactiveStreamsBody implements NettyBody {
 		}
 	}
 
+	private static MessageDigest newMd5() {
+		try {
+			return MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new InternalError(e);
+		}
+	}
+	
 	private static class NettySubscriber extends HandlerSubscriber<HttpContent> {
 		private static final Logger LOGGER = LoggerFactory.getLogger(NettySubscriber.class);
 
@@ -108,13 +116,6 @@ public class NettyReactiveStreamsBody implements NettyBody {
 			this.future = future;
 		}
 
-		private static MessageDigest newMd5() {
-			try {
-				return MessageDigest.getInstance("MD5");
-			} catch (NoSuchAlgorithmException e) {
-				throw new InternalError(e);
-			}
-		}
 		private final MessageDigest md = newMd5();
 		
 		@Override

@@ -248,11 +248,14 @@ public class ReactiveStreamsTest {
 			byte[] responseBody = response.getResponseBodyAsBytes();
 			responseBody = response.getResponseBodyAsBytes();
 			assertEquals(Integer.valueOf(response.getHeader("X-" + CONTENT_LENGTH)).intValue(),
-					LARGE_IMAGE_BYTES.length, "Server side payload length invalid");
-			assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length, "Client side payload length invalid");
-			assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5, "Server side payload MD5 invalid");
-			assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5, "Client side payload MD5 invalid");
-			assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes are not equal on first attempt");
+					LARGE_IMAGE_BYTES.length, "Length of request payload received by the server invalid");
+			assertEquals(responseBody.length, LARGE_IMAGE_BYTES.length,
+					"Length of response payload received from the server invalid");
+			assertEquals(response.getHeader(CONTENT_MD5), LARGE_IMAGE_BYTES_MD5,
+					"MD5 of request payload received by the server invalid");
+			assertEquals(TestUtils.md5(responseBody), LARGE_IMAGE_BYTES_MD5,
+					"MD5 of response payload received from the server invalid");
+			assertEquals(responseBody, LARGE_IMAGE_BYTES, "Image bytes weren't equal on first attempt");
 
 			response = requestBuilder.execute().get();
 			assertEquals(response.getStatusCode(), 200);
@@ -544,17 +547,18 @@ public class ReactiveStreamsTest {
 					int thisCurrentIndex = currentIndex;
 					int length = Math.min(chunkSize, payload.length - thisCurrentIndex);
 					currentIndex += length;
-					
+
 					md.update(payload, thisCurrentIndex, length);
-					
+
 					if (!hasNext()) {
 						String md5 = Base64.encode(md.digest());
 						if (!md5.equals(LARGE_IMAGE_BYTES_MD5)) {
-							new Exception("ByteBufIterable generated a request payload with invalid MD5 of " + md5).printStackTrace();
+							new Exception("ByteBufIterable generated a request payload with invalid MD5 of " + md5)
+									.printStackTrace();
 						}
 						md.reset();
 					}
-					
+
 					return Unpooled.wrappedBuffer(payload, thisCurrentIndex, length);
 				}
 
@@ -565,7 +569,7 @@ public class ReactiveStreamsTest {
 			};
 		}
 	}
-	
+
 	private static MessageDigest newMd5() {
 		try {
 			return MessageDigest.getInstance("MD5");
